@@ -6,6 +6,10 @@ const typeDefs = gql`
     airlines: [Airline!]
   }
   
+  type Mutation {
+    setName(id: ID!): String
+  }
+  
   type Airline {
     id: ID!
     type: String
@@ -33,6 +37,31 @@ const resolvers = {
       return rows.map((row) => {
         return row['travel-sample']
       });
+    }
+  },
+
+  Mutation: {
+    setName: async (_parent, args, _context) => {
+      let upsertResponse;
+      const {cluster, bucket, collection} = await connectToDatabase();
+
+      await collection.get(`airline_${args.id}`).then(async (result) => {
+        const newDoc = {
+          id: args.id,
+          ...result.content,
+          name: "40 Mile Airrrrr",
+        }
+
+        await collection.upsert(`airline_${args.id}`, newDoc).then((result) => {
+          console.log(result);
+          upsertResponse = `Successfully Updated Name of airline_${args.id} to ${newDoc.name}`;
+        }).catch((err) => {
+          console.log(err);
+          upsertResponse = `Error Encountered: ${err.message}`
+        })
+      })
+
+      return upsertResponse;
     }
   }
 };
