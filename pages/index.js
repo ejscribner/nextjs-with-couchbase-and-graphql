@@ -1,7 +1,45 @@
 import Head from 'next/head'
 import {connectToDatabase} from '../util/couchbase'
+import {
+  ApolloClient,
+  InMemoryCache,
+  ApolloProvider,
+  useQuery,
+  gql
+} from "@apollo/client";
+import {useState} from "react";
 
-export default function Home({isConnected, rows}) {
+
+// TOdo: breka this out into a ./apollo-client.js file
+// https://www.apollographql.com/blog/apollo-client/next-js/next-js-getting-started/
+const client = new ApolloClient({
+  uri: 'http://localhost:3000/api/graphql',
+  cache: new InMemoryCache()
+});
+
+
+export default function Home({isConnected, rows, /* airlines */}) {
+  const [getResult, setGetResult] = useState([]);
+
+  const handleGet = async (event) => {
+    event.preventDefault();
+
+
+    const {data} = await client.query({
+      query: gql`
+      query ExampleQuery {
+        airlines {
+          id,
+          type,
+          name
+        }
+      }
+    `
+    })
+    setGetResult(data.airlines)
+  }
+
+
   return (
       <div className="container">
         <Head>
@@ -10,6 +48,30 @@ export default function Home({isConnected, rows}) {
         </Head>
 
         <main>
+          <form onSubmit={handleGet}>
+            <button type="submit">Get Test</button>
+          </form>
+
+          <table style={{textAlign: "left", marginTop: "20px"}}>
+            <tr>
+              <th>Typename</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Type</th>
+            </tr>
+            {getResult !== null && getResult.map((item) => {
+              return (
+                  <tr key={item.id}>
+                    <td>{item.__typename}</td>
+                    <td>{item.id}</td>
+                    <td>{item.name}</td>
+                    <td>{item.type}</td>
+                  </tr>
+              )
+            })}
+          </table>
+
+
           <h1 className="title">
             Welcome to <a href="https://nextjs.org">Next.js with Couchbase!</a>
           </h1>
@@ -278,7 +340,19 @@ export async function getServerSideProps(context) {
     }
   }
 
+  // const {data} = await client.query({
+  //   query: gql`
+  //     query ExampleQuery {
+  //       airlines {
+  //         id,
+  //         type,
+  //         name
+  //       }
+  //     }
+  //   `
+  // });
+
   return {
-    props: {isConnected, rows},
+    props: {isConnected, rows, /* airlines: data.airlines */},
   }
 }
