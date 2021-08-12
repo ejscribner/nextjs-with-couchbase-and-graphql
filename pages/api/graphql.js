@@ -1,13 +1,17 @@
 import {ApolloServer, gql} from "apollo-server-micro";
 import {connectToDatabase} from "../../util/couchbase";
+import {executeRead, executeQuery, executeUpsert} from "../../util/db";
 
 const typeDefs = gql`
   type Query {
     airlines: [Airline!]
+    hotels: [Hotel!]
+    hotel(id: ID!): Hotel!
   }
   
   type Mutation {
     setName(id: ID!): String
+    createHotelBooking(startDate: String!, endDate: String!): Booking_Hotel!
   }
   
   type Airline {
@@ -19,28 +23,75 @@ const typeDefs = gql`
     callsign: String
     country: String
   }
+  
+  type Hotel {
+    id: ID!
+    title: String
+    name: String!
+    address: String!
+    phone: String!
+    url: String!
+    price: Int
+    country: String
+    city: String
+    state: String
+    description: String
+  }
+  
+  type Booking_Hotel {
+    id: ID!
+    startDate: String
+    endDate: String
+    hotel: String!
+  }
 `;
+// TODO: update Booking_Hotel w/ real date types and real hotel type/identifier
 
 const resolvers = {
   Query: {
     airlines: async (_parent, args, _context) => {
-      const { cluster } = await connectToDatabase();
-      let result, rows = null;
-      let qs = `SELECT * FROM \`travel-sample\` WHERE type = "airline" LIMIT 5;`
-      try {
-        result = await cluster.query(qs);
-        rows = result.rows;
-      } catch (e) {
-        console.log('Error Querying: \n', e);
-      }
-
-      return rows.map((row) => {
-        return row['travel-sample']
-      });
+      return executeQuery(`
+         SELECT id,
+            type,
+            name,
+            iata,
+            icao,
+            callsign,
+            country
+         FROM \`travel-sample\`.inventory.airline WHERE type = "airline" LIMIT 5;
+      `);
+    },
+    hotels: async (_parent, args, _context) => {
+      return executeQuery(`
+        SELECT id,
+           title,
+           name,
+           address,
+           phone,
+           url,
+           price,
+           country,
+           city,
+           state,
+           description
+         FROM \`travel-sample\`.inventory.hotel
+      `);
+    },
+    hotel: async (_parent, args, _context) => {
+      return executeRead(`hotel_${args.id}`);
     }
   },
 
   Mutation: {
+    createHotelBooking: async (_parent, args, _context) => {
+      let newBooking = {
+        // TODO: create ID with uid?
+        id: 216,
+        hotel: 'a hotel somewhere',
+        ...args
+      }
+      return executeUpsert(`hotelBooking_${newBooking.id}`, newBooking);
+    },
     setName: async (_parent, args, _context) => {
       let upsertResponse;
       const {cluster, bucket, collection} = await connectToDatabase();
