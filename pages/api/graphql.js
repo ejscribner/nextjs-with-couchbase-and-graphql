@@ -5,7 +5,6 @@ import { v4 } from 'uuid'
 
 const typeDefs = gql`
   type Query {
-    airlines: [Airline!]
     hotels: [Hotel!]
     hotel(id: ID!): Hotel!
     bookings: [Booking_Hotel!]
@@ -15,16 +14,6 @@ const typeDefs = gql`
     createHotelBooking(startDate: String!, endDate: String!, hotelId: ID!): Booking_Hotel!
     updateHotelBooking(id: ID!, startDate: String, endDate: String): Booking_Hotel!
     deleteHotelBooking(id: ID!): String
-  }
-  
-  type Airline {
-    id: ID!
-    type: String
-    name: String
-    iata: String
-    icao: String
-    callsign: String
-    country: String
   }
   
   type Hotel {
@@ -53,18 +42,6 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    airlines: async (_parent, args, _context) => {
-      return executeQuery(`
-         SELECT id,
-            type,
-            name,
-            iata,
-            icao,
-            callsign,
-            country
-         FROM \`travel-sample\`.inventory.airline WHERE type = "airline" LIMIT 5;
-      `);
-    },
     hotels: async (_parent, args, _context) => {
       return executeQuery(`
         SELECT id,
