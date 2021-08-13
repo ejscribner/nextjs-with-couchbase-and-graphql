@@ -1,43 +1,15 @@
 import Head from 'next/head'
 import {connectToDatabase} from '../util/couchbase'
-import {
-  ApolloClient,
-  InMemoryCache,
-  ApolloProvider,
-  useQuery,
-  gql
-} from "@apollo/client";
+import { gql } from "@apollo/client";
 import {useState} from "react";
 import 'semantic-ui-css/semantic.min.css'
-import {Button, Tab, Table} from "semantic-ui-react";
+import { Tab, Table } from "semantic-ui-react";
 import BookingModal from "./components/BookingModal";
 
-// TOdo: break this out into a ./apollo-client.js file
-// https://www.apollographql.com/blog/apollo-client/next-js/next-js-getting-started/
-const client = new ApolloClient({
-  uri: 'http://localhost:3000/api/graphql',
-  cache: new InMemoryCache()
-});
+import client from "../apollo-client";
 
 export default function Home({hotels, bookings}) {
   const [getResult, setGetResult] = useState([]);
-  const handleGet = async (event) => {
-    event.preventDefault();
-
-
-    const {data} = await client.query({
-      query: gql`
-      query ExampleQuery {
-        airlines {
-          id,
-          type,
-          name
-        }
-      }
-    `
-    })
-    setGetResult(data.airlines)
-  }
 
   const panes = [
     {menuItem: 'Hotels', render: () =>
@@ -59,7 +31,7 @@ export default function Home({hotels, bookings}) {
                           <Table.Cell>{hotel.name}</Table.Cell>
                           <Table.Cell>{hotel.address}</Table.Cell>
                           <Table.Cell>{hotel.phone}</Table.Cell>
-                          <Table.Cell><BookingModal/></Table.Cell>
+                          <Table.Cell><BookingModal hotelId={hotel.id}/></Table.Cell>
                         </Table.Row>
                     )
                   })
