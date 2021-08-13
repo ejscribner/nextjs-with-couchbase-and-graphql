@@ -1,6 +1,7 @@
 import {ApolloServer, gql} from "apollo-server-micro";
 import {connectToDatabase} from "../../util/couchbase";
 import {executeRead, executeQuery, executeUpsert} from "../../util/db";
+import { v4 } from 'uuid'
 
 const typeDefs = gql`
   type Query {
@@ -11,7 +12,7 @@ const typeDefs = gql`
   
   type Mutation {
     setName(id: ID!): String
-    createHotelBooking(startDate: String!, endDate: String!): Booking_Hotel!
+    createHotelBooking(startDate: String!, endDate: String!, hotelId: ID!): Booking_Hotel!
   }
   
   type Airline {
@@ -42,7 +43,7 @@ const typeDefs = gql`
     id: ID!
     startDate: String
     endDate: String
-    hotel: String!
+    hotel: Hotel!
   }
 `;
 // TODO: update Booking_Hotel w/ real date types and real hotel type/identifier
@@ -84,10 +85,11 @@ const resolvers = {
 
   Mutation: {
     createHotelBooking: async (_parent, args, _context) => {
+      let hotelToBook = await executeRead(`hotel_${args.hotelId}`)
+
       let newBooking = {
-        // TODO: create ID with uid?
-        id: 216,
-        hotel: 'a hotel somewhere',
+        id: v4(),
+        hotel: hotelToBook,
         ...args
       }
       return executeUpsert(`hotelBooking_${newBooking.id}`, newBooking, 'bookings', 'hotel');
