@@ -1,8 +1,9 @@
 // TODO: is module or import better here?
 import {connectToDatabase} from "./couchbase";
 
-export async function executeUpsert(key, val) {
-  const { collection } = await connectToDatabase();
+export async function executeUpsert(key, val, scopeName, collectionName) {
+  const { bucket } = await connectToDatabase();
+  const collection = bucket.scope(scopeName).collection(collectionName);
   let result = await collection.upsert(key, val);
   console.log(result);
   // TODO: handle errs

@@ -90,7 +90,7 @@ const resolvers = {
         hotel: 'a hotel somewhere',
         ...args
       }
-      return executeUpsert(`hotelBooking_${newBooking.id}`, newBooking);
+      return executeUpsert(`hotelBooking_${newBooking.id}`, newBooking, 'bookings', 'hotel');
     },
     setName: async (_parent, args, _context) => {
       let upsertResponse;
