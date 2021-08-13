@@ -3,13 +3,32 @@ import {connectToDatabase} from '../util/couchbase'
 import { gql } from "@apollo/client";
 import {useState} from "react";
 import 'semantic-ui-css/semantic.min.css'
-import { Tab, Table } from "semantic-ui-react";
+import {Button, Tab, Table} from "semantic-ui-react";
 import BookingModal from "./components/BookingModal";
 
 import client from "../apollo-client";
 
 export default function Home({hotels, bookings}) {
-  const [getResult, setGetResult] = useState([]);
+  // console.log(bookings);
+  const [currentBookings, setCurrentBookings] = useState(bookings);
+  // console.log(currentBookings);
+
+  const handleBookingDeletion = async (event, idToDelete) => {
+    event.preventDefault();
+    await client.mutate({
+      mutation: gql`
+        mutation DeleteHotelBookingMutation {
+          deleteHotelBooking(id: "${idToDelete}") 
+        }
+    `
+    })
+
+    let filtered = currentBookings.filter((value, index, arr) => {
+      return value.id !== idToDelete;
+    })
+    setCurrentBookings(filtered)
+
+  }
 
   const panes = [
     {menuItem: 'Hotels', render: () =>
@@ -51,14 +70,20 @@ export default function Home({hotels, bookings}) {
               </Table.Header>
 
               <Table.Body>
-                { bookings &&
-                bookings.map((booking) => {
+                { currentBookings &&
+                currentBookings.map((booking) => {
                   return (
                       <Table.Row key={booking.id}>
                         <Table.Cell>{booking.hotelDetails.name}</Table.Cell>
                         <Table.Cell>{booking.startDate}</Table.Cell>
                         <Table.Cell>{booking.endDate}</Table.Cell>
-                        <Table.Cell>Dropdown Actions (Modify/Cancel)</Table.Cell>
+                        <Table.Cell>
+                          <Button.Group>
+                            <Button primary>Modify</Button>
+                            <Button.Or/>
+                            <Button negative onClick={(e) => handleBookingDeletion(e, booking.id)}>Cancel</Button>
+                          </Button.Group>
+                        </Table.Cell>
                       </Table.Row>
                   )
                 })
@@ -274,29 +299,6 @@ export async function getServerSideProps(context) {
 
   const {cluster, bucket, collection} = connection;
 
-  // Check connection with a KV GET operation for a key that doesnt exist
-  let isConnected = false;
-  try {
-    await collection.get('testingConnectionKey');
-  } catch (err) {
-    // error message will return 'document not found' if and only if we are connected
-    // (but this document is not present, we're only trying to test the connection here)
-    if (err.message === 'document not found') {
-      isConnected = true;
-    }
-    // if the error message is anything OTHER THAN 'document not found', the connection is broken
-  }
-
-  let result, rows = null;
-  if (isConnected && bucket._name === 'travel-sample') {
-    let qs = `SELECT * FROM \`travel-sample\` WHERE type = "airline" LIMIT 5;`
-    try {
-      result = await cluster.query(qs);
-      rows = result.rows;
-    } catch (e) {
-      console.log('Error Querying: \n', e);
-    }
-  }
 
   const hotelsResponse = await client.query({
     query: gql`
@@ -310,7 +312,7 @@ export async function getServerSideProps(context) {
       }
     `
   })
-
+  // TODO: look into why booking response state is weird
   const bookingsResponse = await client.query({
     query: gql`
       query Bookings {
@@ -325,6 +327,9 @@ export async function getServerSideProps(context) {
       }
     `
   })
+
+  console.log("Hello!");
+  console.log(bookingsResponse.data.bookings);
 
 
   return {
