@@ -1,6 +1,6 @@
 import {ApolloServer, gql} from "apollo-server-micro";
 import {connectToDatabase} from "../../util/couchbase";
-import {executeRead, executeQuery, executeUpsert} from "../../util/db";
+import {executeRead, executeQuery, executeUpsert, executeDelete} from "../../util/db";
 import { v4 } from 'uuid'
 
 const typeDefs = gql`
@@ -8,11 +8,13 @@ const typeDefs = gql`
     airlines: [Airline!]
     hotels: [Hotel!]
     hotel(id: ID!): Hotel!
+    bookings: [Booking_Hotel!]
   }
   
   type Mutation {
-    setName(id: ID!): String
     createHotelBooking(startDate: String!, endDate: String!, hotelId: ID!): Booking_Hotel!
+    updateHotelBooking(id: ID!, startDate: String, endDate: String): Booking_Hotel!
+    deleteHotelBooking(id: ID!): String
   }
   
   type Airline {
@@ -43,7 +45,8 @@ const typeDefs = gql`
     id: ID!
     startDate: String
     endDate: String
-    hotel: Hotel!
+    hotelId: ID!
+    hotelDetails: Hotel
   }
 `;
 // TODO: update Booking_Hotel w/ real date types and real hotel type/identifier
@@ -80,43 +83,50 @@ const resolvers = {
     },
     hotel: async (_parent, args, _context) => {
       return executeRead(`hotel_${args.id}`);
+    },
+    bookings: async (_parent, args, _context) => {
+      let bookings = await executeQuery(`
+        SELECT id,
+            startDate,
+            endDate,
+            hotelId
+        FROM \`travel-sample\`.bookings.hotel
+      `)
+
+      // fetch hotel details for each booking with a KV GET
+      bookings = await Promise.all(bookings.map(async (item) => {
+        let temp = {...item};
+        temp.hotelDetails = await executeRead(`hotel_${item.hotelId}`, 'inventory', 'hotel');
+        return temp;
+      }))
+
+      return bookings;
     }
   },
 
   Mutation: {
     createHotelBooking: async (_parent, args, _context) => {
-      let hotelToBook = await executeRead(`hotel_${args.hotelId}`)
-
       let newBooking = {
         id: v4(),
-        hotel: hotelToBook,
         ...args
       }
       return executeUpsert(`hotelBooking_${newBooking.id}`, newBooking, 'bookings', 'hotel');
     },
-    setName: async (_parent, args, _context) => {
-      let upsertResponse;
-      const {cluster, bucket, collection} = await connectToDatabase();
+    updateHotelBooking: async (_parent, args, _context) => {
+      let currentBooking = await executeRead(`hotelBooking_${args.id}`, 'bookings', 'hotel');
+      let updatedBooking = {
+        ...currentBooking,
+        id: args.id,
+        startDate: args.startDate ? args.startDate : currentBooking.startDate,
+        endDate: args.endDate ? args.endDate : currentBooking.endDate
+      }
 
-      await collection.get(`airline_${args.id}`).then(async (result) => {
-        const newDoc = {
-          id: args.id,
-          ...result.content,
-          name: "40 Mile Airrrrr",
-        }
-
-        await collection.upsert(`airline_${args.id}`, newDoc).then((result) => {
-          console.log(result);
-          upsertResponse = `Successfully Updated Name of airline_${args.id} to ${newDoc.name}`;
-        }).catch((err) => {
-          console.log(err);
-          upsertResponse = `Error Encountered: ${err.message}`
-        })
-      })
-
-      return upsertResponse;
+      return executeUpsert(`hotelBooking_${args.id}`, updatedBooking, 'bookings', 'hotel');
+    },
+    deleteHotelBooking: async (_parent, args, _context) => {
+      return await executeDelete(`hotelBooking_${args.id}`, 'bookings', 'hotel')
     }
-  }
+  },
 };
 
 const apolloServer = new ApolloServer({
