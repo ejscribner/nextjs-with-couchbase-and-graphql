@@ -8,19 +8,19 @@ import {
   gql
 } from "@apollo/client";
 import {useState} from "react";
+import 'semantic-ui-css/semantic.min.css'
+import {Button, Tab, Table} from "semantic-ui-react";
+import BookingModal from "./components/BookingModal";
 
-
-// TOdo: breka this out into a ./apollo-client.js file
+// TOdo: break this out into a ./apollo-client.js file
 // https://www.apollographql.com/blog/apollo-client/next-js/next-js-getting-started/
 const client = new ApolloClient({
   uri: 'http://localhost:3000/api/graphql',
   cache: new InMemoryCache()
 });
 
-
-export default function Home({isConnected, rows, /* airlines */}) {
+export default function Home({hotels, bookings}) {
   const [getResult, setGetResult] = useState([]);
-
   const handleGet = async (event) => {
     event.preventDefault();
 
@@ -39,6 +39,63 @@ export default function Home({isConnected, rows, /* airlines */}) {
     setGetResult(data.airlines)
   }
 
+  const panes = [
+    {menuItem: 'Hotels', render: () =>
+          <Tab.Pane>
+          {/*  Table of Hotels */}
+            <Table celled padded>
+              <Table.Header>
+                <Table.HeaderCell>Name</Table.HeaderCell>
+                <Table.HeaderCell>Address</Table.HeaderCell>
+                <Table.HeaderCell>Phone</Table.HeaderCell>
+                <Table.HeaderCell>Actions</Table.HeaderCell>
+              </Table.Header>
+
+              <Table.Body>
+                { hotels &&
+                  hotels.map((hotel) => {
+                    return (
+                        <Table.Row key={hotel.id}>
+                          <Table.Cell>{hotel.name}</Table.Cell>
+                          <Table.Cell>{hotel.address}</Table.Cell>
+                          <Table.Cell>{hotel.phone}</Table.Cell>
+                          <Table.Cell><BookingModal/></Table.Cell>
+                        </Table.Row>
+                    )
+                  })
+                }
+              </Table.Body>
+            </Table>
+          </Tab.Pane>
+    },
+    {menuItem: 'Bookings', render: () =>
+          <Tab.Pane>
+            <Table celled padded>
+              <Table.Header>
+                <Table.HeaderCell>Hotel Name</Table.HeaderCell>
+                <Table.HeaderCell>Check In</Table.HeaderCell>
+                <Table.HeaderCell>Check Out</Table.HeaderCell>
+                <Table.HeaderCell>Actions</Table.HeaderCell>
+              </Table.Header>
+
+              <Table.Body>
+                { bookings &&
+                bookings.map((booking) => {
+                  return (
+                      <Table.Row key={booking.id}>
+                        <Table.Cell>{booking.hotelDetails.name}</Table.Cell>
+                        <Table.Cell>{booking.startDate}</Table.Cell>
+                        <Table.Cell>{booking.endDate}</Table.Cell>
+                        <Table.Cell>Dropdown Actions (Modify/Cancel)</Table.Cell>
+                      </Table.Row>
+                  )
+                })
+                }
+              </Table.Body>
+            </Table>
+          </Tab.Pane>
+    }
+  ]
 
   return (
       <div className="container">
@@ -48,77 +105,7 @@ export default function Home({isConnected, rows, /* airlines */}) {
         </Head>
 
         <main>
-          <form onSubmit={handleGet}>
-            <button type="submit">Get Test</button>
-          </form>
-
-          <table style={{textAlign: "left", marginTop: "20px"}}>
-            <tr>
-              <th>Typename</th>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Type</th>
-            </tr>
-            {getResult !== null && getResult.map((item) => {
-              return (
-                  <tr key={item.id}>
-                    <td>{item.__typename}</td>
-                    <td>{item.id}</td>
-                    <td>{item.name}</td>
-                    <td>{item.type}</td>
-                  </tr>
-              )
-            })}
-          </table>
-
-
-          <h1 className="title">
-            Welcome to <a href="https://nextjs.org">Next.js with Couchbase!</a>
-          </h1>
-
-          {isConnected ? (
-              <h2 className="subtitle green">You are connected to Couchbase</h2>
-          ) : (
-              <>
-                <h2 className="subtitle red">
-                  You are NOT connected to Couchbase. Try refreshing the page,
-                  and if this error persists check the <code>README.md</code>{' '}for instructions.
-                </h2>
-                <em className="center">Note: if the database was recently started, you might have to re-start the app (if
-                  using dev mode) or re-deploy to your serverless environment for changes to take effect.</em>
-              </>
-          )}
-
-          <p className="description">
-            Get started by editing <code>pages/index.js</code>
-          </p>
-
-          <h2>Querying travel-sample to test connection:</h2>
-          {rows === null ? (
-              <em className="small center">Note: you must have travel-sample data imported to your couchbase instance and set the COUCHBASE_BUCKET properly for this to populate</em>
-          ) : (<></>)}
-          <table style={{textAlign: "left", marginTop: "20px"}}>
-            <tr>
-              <th>Name</th>
-              <th>Country</th>
-              <th>Callsign</th>
-              <th>ICAO</th>
-              <th>ID</th>
-              <th>Type</th>
-            </tr>
-            {rows !== null && rows.map((item) => {
-              return (
-                  <tr key={item['travel-sample'].id}>
-                    <td>{item['travel-sample'].name}</td>
-                    <td>{item['travel-sample'].country}</td>
-                    <td>{item['travel-sample'].callsign}</td>
-                    <td>{item['travel-sample'].icao}</td>
-                    <td>{item['travel-sample'].id}</td>
-                    <td>{item['travel-sample'].type}</td>
-                  </tr>
-              )
-            })}
-          </table>
+          <Tab panes={panes}></Tab>
         </main>
 
         <footer>
@@ -291,7 +278,6 @@ export default function Home({isConnected, rows, /* airlines */}) {
             }
           }
         `}</style>
-
         <style jsx global>{`
           html,
           body {
@@ -340,19 +326,39 @@ export async function getServerSideProps(context) {
     }
   }
 
-  // const {data} = await client.query({
-  //   query: gql`
-  //     query ExampleQuery {
-  //       airlines {
-  //         id,
-  //         type,
-  //         name
-  //       }
-  //     }
-  //   `
-  // });
+  const hotelsResponse = await client.query({
+    query: gql`
+      query Hotels {
+        hotels {
+          id
+          name
+          address
+          phone
+        }
+      }
+    `
+  })
+
+  const bookingsResponse = await client.query({
+    query: gql`
+      query Bookings {
+        bookings {
+          id
+          startDate
+          endDate
+          hotelDetails {
+            name
+          }
+        }
+      }
+    `
+  })
+
 
   return {
-    props: {isConnected, rows, /* airlines: data.airlines */},
+    props: {
+      hotels: hotelsResponse.data.hotels,
+      bookings: bookingsResponse.data.bookings
+    },
   }
 }

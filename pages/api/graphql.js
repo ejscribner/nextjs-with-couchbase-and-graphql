@@ -20,8 +20,8 @@ const typeDefs = gql`
     id: ID!
     title: String
     name: String!
-    address: String!
-    phone: String!
+    address: String
+    phone: String
     url: String!
     price: Int
     country: String
@@ -38,7 +38,7 @@ const typeDefs = gql`
     hotelDetails: Hotel
   }
 `;
-// TODO: update Booking_Hotel w/ real date types and real hotel type/identifier
+// TODO: update Booking_Hotel w/ real date types
 
 const resolvers = {
   Query: {
