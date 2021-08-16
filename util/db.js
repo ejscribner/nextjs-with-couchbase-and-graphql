@@ -5,8 +5,7 @@ export async function executeUpsert(key, val, scopeName, collectionName) {
   const { bucket } = await connectToDatabase();
   const collection = bucket.scope(scopeName).collection(collectionName);
   let result = await collection.upsert(key, val);
-  console.log("YOOOOO");
-  console.log(result);
+
   // TODO: handle errs
   // TODO: how and what should we return here?
   return val;
@@ -31,6 +30,8 @@ export async function executeDelete(key, scopeName, collectionName) {
   }).catch((err) => {
     result = `Error: ${err.message}`;
   });
+
+  console.log(result);
 
   return result;
 }

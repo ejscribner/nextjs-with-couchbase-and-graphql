@@ -56,6 +56,7 @@ const resolvers = {
            state,
            description
          FROM \`travel-sample\`.inventory.hotel
+         LIMIT 25
       `);
     },
     hotel: async (_parent, args, _context) => {
@@ -71,6 +72,9 @@ const resolvers = {
       `)
 
       // fetch hotel details for each booking with a KV GET
+      if (bookings === null) {
+        throw new Error("Could not fetch data. Is the database running?")
+      }
       bookings = await Promise.all(bookings.map(async (item) => {
         let temp = {...item};
         temp.hotelDetails = await executeRead(`hotel_${item.hotelId}`, 'inventory', 'hotel');
@@ -87,7 +91,13 @@ const resolvers = {
         id: v4(),
         ...args
       }
-      return executeUpsert(`hotelBooking_${newBooking.id}`, newBooking, 'bookings', 'hotel');
+
+      let res = await executeUpsert(`hotelBooking_${newBooking.id}`, newBooking, 'bookings', 'hotel');
+
+      // fetch hotel details with a KV GET
+      res.hotelDetails = await executeRead(`hotel_${res.hotelId}`, 'inventory', 'hotel');
+
+      return res;
     },
     updateHotelBooking: async (_parent, args, _context) => {
       let currentBooking = await executeRead(`hotelBooking_${args.id}`, 'bookings', 'hotel');
@@ -98,7 +108,11 @@ const resolvers = {
         endDate: args.endDate ? args.endDate : currentBooking.endDate
       }
 
-      return executeUpsert(`hotelBooking_${args.id}`, updatedBooking, 'bookings', 'hotel');
+      let res = await executeUpsert(`hotelBooking_${args.id}`, updatedBooking, 'bookings', 'hotel');
+
+      res.hotelDetails = await executeRead(`hotel_${res.hotelId}`, 'inventory', 'hotel');
+
+      return res;
     },
     deleteHotelBooking: async (_parent, args, _context) => {
       return await executeDelete(`hotelBooking_${args.id}`, 'bookings', 'hotel')

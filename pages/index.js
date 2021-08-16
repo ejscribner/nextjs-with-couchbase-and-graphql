@@ -9,9 +9,7 @@ import BookingModal from "./components/BookingModal";
 import client from "../apollo-client";
 
 export default function Home({hotels, bookings}) {
-  // console.log(bookings);
   const [currentBookings, setCurrentBookings] = useState(bookings);
-  // console.log(currentBookings);
 
   const handleBookingDeletion = async (event, idToDelete) => {
     event.preventDefault();
@@ -27,7 +25,22 @@ export default function Home({hotels, bookings}) {
       return value.id !== idToDelete;
     })
     setCurrentBookings(filtered)
+  }
 
+  const addBooking = (newBooking) => {
+    let newBookingsArray = [
+      ...currentBookings
+    ]
+
+    upsert(newBookingsArray, newBooking)
+
+    setCurrentBookings(newBookingsArray)
+  }
+
+  function upsert(array, item) {
+    const i = array.findIndex(_item => _item.id === item.id);
+    if (i > -1) array[i] = item;
+    else array.push(item);
   }
 
   const panes = [
@@ -43,14 +56,14 @@ export default function Home({hotels, bookings}) {
               </Table.Header>
 
               <Table.Body>
-                { hotels &&
+                { !!hotels &&
                   hotels.map((hotel) => {
                     return (
                         <Table.Row key={hotel.id}>
                           <Table.Cell>{hotel.name}</Table.Cell>
                           <Table.Cell>{hotel.address}</Table.Cell>
                           <Table.Cell>{hotel.phone}</Table.Cell>
-                          <Table.Cell><BookingModal hotelId={hotel.id}/></Table.Cell>
+                          <Table.Cell><BookingModal hotelId={hotel.id} onCreateBooking={addBooking}/></Table.Cell>
                         </Table.Row>
                     )
                   })
@@ -70,7 +83,7 @@ export default function Home({hotels, bookings}) {
               </Table.Header>
 
               <Table.Body>
-                { currentBookings &&
+                { !!currentBookings &&
                 currentBookings.map((booking) => {
                   return (
                       <Table.Row key={booking.id}>
@@ -79,7 +92,7 @@ export default function Home({hotels, bookings}) {
                         <Table.Cell>{booking.endDate}</Table.Cell>
                         <Table.Cell>
                           <Button.Group>
-                            <Button primary>Modify</Button>
+                            <BookingModal hotelId={booking.hotelDetails.id} onCreateBooking={addBooking} bookingRecord={booking}/>
                             <Button.Or/>
                             <Button negative onClick={(e) => handleBookingDeletion(e, booking.id)}>Cancel</Button>
                           </Button.Group>
@@ -321,15 +334,15 @@ export async function getServerSideProps(context) {
           startDate
           endDate
           hotelDetails {
-            name
+            name,
+            id
           }
         }
       }
     `
   })
 
-  console.log("Hello!");
-  console.log(bookingsResponse.data.bookings);
+  // console.log(bookingsResponse.data.bookings);
 
 
   return {
