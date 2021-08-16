@@ -53,7 +53,6 @@ const BookingModal = (props) => {
 
       updateCurrentBookingsState(result.data.updateHotelBooking);
     }
-
   }
 
   return (
@@ -64,7 +63,6 @@ const BookingModal = (props) => {
           trigger={props.bookingRecord ? <Button primary>Modify</Button> : <Button>Book</Button>}
       >
         <Modal.Header>Book Now</Modal.Header>
-        {/*TODO: bok now or modify based on if bookingRecord is null*/}
         <Modal.Content>
           <Form>
             <Form.Group widths='equal'>
