@@ -325,7 +325,7 @@ export async function getServerSideProps(context) {
       }
     `
   })
-  // TODO: look into why booking response state is weird
+
   const bookingsResponse = await client.query({
     query: gql`
       query Bookings {

@@ -1,12 +1,10 @@
 import {ApolloServer, gql} from "apollo-server-micro";
-import {connectToDatabase} from "../../util/couchbase";
 import {executeRead, executeQuery, executeUpsert, executeDelete} from "../../util/db";
 import { v4 } from 'uuid'
 
 const typeDefs = gql`
   type Query {
     hotels: [Hotel!]
-    hotel(id: ID!): Hotel!
     bookings: [Booking_Hotel!]
   }
   
@@ -38,7 +36,6 @@ const typeDefs = gql`
     hotelDetails: Hotel
   }
 `;
-// TODO: update Booking_Hotel w/ real date types
 
 const resolvers = {
   Query: {
@@ -58,9 +55,6 @@ const resolvers = {
          FROM \`travel-sample\`.inventory.hotel
          LIMIT 25
       `);
-    },
-    hotel: async (_parent, args, _context) => {
-      return executeRead(`hotel_${args.id}`);
     },
     bookings: async (_parent, args, _context) => {
       let bookings = await executeQuery(`

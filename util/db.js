@@ -1,23 +1,34 @@
-// TODO: is module or import better here?
 import {connectToDatabase} from "./couchbase";
 
 export async function executeUpsert(key, val, scopeName, collectionName) {
   const { bucket } = await connectToDatabase();
   const collection = bucket.scope(scopeName).collection(collectionName);
-  let result = await collection.upsert(key, val);
+  let result;
 
-  // TODO: handle errs
-  // TODO: how and what should we return here?
-  return val;
+  try {
+    await collection.upsert(key, val).then(() => {
+      result = val;
+    });
+  } catch (e) {
+    console.error('Error Upserting \n', e.message);
+    return e;
+  }
+
+  return result;
 }
 
 export async function executeRead(key, scopeName, collectionName) {
-  // TODO: need to fix the default collection here and export others from conn to db
   const { bucket } = await connectToDatabase();
   const collection = bucket.scope(scopeName).collection(collectionName);
-  let result = await collection.get(key);
+  let result;
 
-  // TODO: err handling here
+  try {
+    result = await collection.get(key);
+  } catch (e) {
+    console.error('Error Reading \n', e.message);
+    return e;
+  }
+
   return result.content;
 }
 
@@ -25,13 +36,14 @@ export async function executeDelete(key, scopeName, collectionName) {
   const { bucket } = await connectToDatabase();
   const collection = bucket.scope(scopeName).collection(collectionName);
   let result;
-  await collection.remove(key).then(() => {
-    result = `Successfully Removed: ${key}`
-  }).catch((err) => {
-    result = `Error: ${err.message}`;
-  });
 
-  console.log(result);
+  try {
+    await collection.remove(key);
+    result = `Successfully Removed: ${key}`
+  } catch (e) {
+    console.error('Error Deleting: \n', e.message)
+    return e;
+  }
 
   return result;
 }
@@ -39,13 +51,15 @@ export async function executeDelete(key, scopeName, collectionName) {
 export async function executeQuery(queryString) {
   const { cluster } = await connectToDatabase();
   let result, rows = null;
+
   try {
     result = await cluster.query(queryString);
     rows = result.rows;
   } catch (e) {
-    console.log('Error Querying \n', e);
+    console.error('Error Querying: \n', e.message);
+    return e;
   }
-  // console.log(rows);
+
   return rows;
 }
 

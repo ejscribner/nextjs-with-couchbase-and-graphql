@@ -62,14 +62,18 @@ const BookingModal = (props) => {
           open={open}
           trigger={props.bookingRecord ? <Button primary>Modify</Button> : <Button>Book</Button>}
       >
-        <Modal.Header>Book Now</Modal.Header>
+        {!props.bookingRecord ?
+            <Modal.Header>Book Now</Modal.Header>
+            :
+            <Modal.Header>Update Booking</Modal.Header>
+        }
+
+
         <Modal.Content>
           <Form>
             <Form.Group widths='equal'>
-              <label>{props.bookingRecord ? props.bookingRecord.startDate : ''}</label>
-              <Form.Input fluid placeholder='Check In Date' id='checkInField' />
-              <label>{props.bookingRecord ? props.bookingRecord.endDate : ''}</label>
-              <Form.Input fluid placeholder='Check Out Date' id='checkOutField' initialValue={props.bookingRecord ? props.bookingRecord.endDate : ''}/>
+              <Form.Input fluid label='Check In' placeholder={props.bookingRecord ? props.bookingRecord.startDate : 'Check In Date'} id='checkInField' />
+              <Form.Input fluid label='Check Out' placeholder={props.bookingRecord ? props.bookingRecord.endDate : 'Check Out Date'} id='checkOutField' />
             </Form.Group>
           </Form>
         </Modal.Content>
