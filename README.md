@@ -1,5 +1,8 @@
 ## Next.js with Couchbase and GraphQL
 
+> This sample app was created in conjunction with the presentation 'Building a Modern Server-Side Rendering Web App Using Next.js, GraphQL, and Couchbase'
+> Links to recordings of this talk will be available soon
+
 [Couchbase](https://www.couchbase.com/) is The Modern Database for Enterprise Applications. This example will show you how to connect to and use Couchbase for your Next.js app.
 
 If you want to learn more about Couchbase, visit the following pages:
@@ -8,7 +11,6 @@ If you want to learn more about Couchbase, visit the following pages:
 - [Couchbase Developer Portal](https://developer.couchbase.com/)
 - [Couchbase Cloud](https://cloud.couchbase.com/sign-up)
 
-_NOTE:_ Some parts of this README have been commented out as they apply to Vercel deployment features or create-next-app features that have not yet been configured for Couchbase.
 
 ## How to use
 - Clone this repo and follow configuration steps below
