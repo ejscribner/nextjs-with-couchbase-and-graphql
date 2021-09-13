@@ -18,6 +18,6 @@ const client = new ApolloClient({
   defaultOptions: defaultOptions
 });
 
-console.log(client);
+console.log(process.env.BASE_URL);
 
 export default client;
