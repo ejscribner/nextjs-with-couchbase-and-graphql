@@ -11,7 +11,7 @@ const defaultOptions = {
   },
 }
 
-let baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+let baseUrl = process.env.BASE_URL;
 console.log(baseUrl);
 const client = new ApolloClient({
   uri: `${baseUrl}/api/graphql`,
