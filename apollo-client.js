@@ -11,13 +11,11 @@ const defaultOptions = {
   },
 }
 
-let baseUrl = process.env.BASE_URL;
-console.log(baseUrl);
+
 const client = new ApolloClient({
-  uri: `/api/graphql`,
+  uri: `https://nextjs-with-couchbase-and-graphql.vercel.app/api/graphql`,
   cache: new InMemoryCache(),
   defaultOptions: defaultOptions
 });
-
 
 export default client;
