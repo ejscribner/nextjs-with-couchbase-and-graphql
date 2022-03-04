@@ -45,6 +45,11 @@ Set each variable on `.env.local`:
 - `COUCHBASE_BUCKET` - The bucket you'd like to connect to for testing. Defaults to `travel-sample`, which works best (but must be imported, see notes on adding [sample buckets](https://docs.couchbase.com/server/current/manage/manage-settings/install-sample-buckets.html))
 - `IS_CLOUD_INSTANCE` - `true` if you are trying to connect to an instance of Couchbase Cloud, `false` otherwise.
 
+### Set the client URI in `apollo-client.js`
+- For local development, `http://localhost:3000/api/graphql` should be used.
+- For deployment to Vercel, `https://<vercel-app-name>.vercel.app/api/graphql` should be used.
+- **Failure to set this URI properly results in an `Error: Unexpected token A in JSON at position 0`**
+
 ### Run Next.js in development mode
 
 ```bash
