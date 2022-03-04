@@ -1,4 +1,5 @@
 import {connectToDatabase} from "./couchbase";
+import {PlanningFailureError} from "couchbase";
 
 export async function executeUpsert(key, val, scopeName, collectionName) {
   const { bucket } = await connectToDatabase();
@@ -57,6 +58,18 @@ export async function executeQuery(queryString) {
     rows = result.rows;
   } catch (e) {
     console.error('Error Querying: \n', e.message);
+    if (e instanceof PlanningFailureError) {
+      // need to build an index
+      console.log('Building Primary Index for Hotel Bookings');
+      const hotelBookingIndex = `CREATE PRIMARY INDEX ON \`${process.env.COUCHBASE_BUCKET}\`.bookings.hotel;`
+      try {
+        await cluster.query(hotelBookingIndex)
+        console.log('Index Created');
+      } catch (e) {
+        console.error('Error building index');
+      }
+
+    }
     return e;
   }
 
